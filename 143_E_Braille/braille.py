@@ -33,14 +33,14 @@ brailleMap = {
 }
 
 lines = [line.rstrip().split() for line in open('input.txt')]
-letters = [list() for letter in lines[0]]
+
+letters = []
 for i in xrange(len(lines[0])):
-	for line in lines:
-		letters[i].extend(line[i:i+1])
+	letters.extend(zip(lines[0][i:i+1], lines[1][i:i+1], lines[2][i:i+1] ))
 
 translation = ''
 for letter in letters:
-	translation += brailleMap[tuple(letter)]
+	translation += brailleMap[letter]
 
 desiredOutput = open('output.txt').read().strip()
 
