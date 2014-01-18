@@ -16,7 +16,7 @@ numMap = {
 
 nums = [val[0] for val in sys.argv[1:]] # Doing Challenge++, discard frequency info
 
-words = open('/usr/share/dict/words').read().lower().rstrip()
+words = open('/usr/share/dict/words').read().lower()
 charsList = []
 for num in nums:
 	try:
