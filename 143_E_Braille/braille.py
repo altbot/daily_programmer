@@ -4,7 +4,7 @@
 # Optimisation - divide {a-j}, {k-t}, {u,v,x,y,z}, {w} into their own
 # dicts and use common characteristics to determine which dict to lookup
 brailleMap = {
-('O.', 'OO', 'OO'): 'a',
+('O.', '..', '..'): 'a',
 ('O.', 'O.', '..'): 'b',
 ('OO', '..', '..'): 'c',
 ('OO', '.O', '..'): 'd',
@@ -32,20 +32,32 @@ brailleMap = {
 ('O.', '.O', 'OO'): 'z',
 }
 
-lines = [line.rstrip().split() for line in open('input.txt')]
+def formatBrailleWord(lines):
+	letters = []
+	for i in xrange(len(lines[0])):
+		letters.extend(zip(lines[0][i:i+1], lines[1][i:i+1], lines[2][i:i+1]))
+	return letters
 
-letters = []
-for i in xrange(len(lines[0])):
-	letters.extend(zip(lines[0][i:i+1], lines[1][i:i+1], lines[2][i:i+1] ))
+def translateBrailleWord(braille):
+	translation = ''
+	for letter in braille:
+		translation += brailleMap[letter]
+	return translation
 
-translation = ''
-for letter in letters:
-	translation += brailleMap[letter]
+lines = [line.strip().split() for line in open('input.txt') if line.strip()]
+words = []
+translationList = []
+for i in xrange(0, len(lines), 3):
+	words.append(formatBrailleWord(lines[i:i+3]))
+for word in words:
+	translationList.append(translateBrailleWord(word))
 
-desiredOutput = open('output.txt').read().strip()
-if translation == desiredOutput:
-	print translation
-else:
-	print "Failure, translation does not match desired output"
-	print "translation:", translation
-	print "desired output", desiredOutput
+desiredList = [line.strip() for line in open('output.txt').readlines()]
+
+for i in xrange(len(desiredList)):
+	desired, translation = desiredList[i], translationList[i]
+	if translation == desired:
+		print translation
+	else:
+		print "Failure, translation does not match desired output"
+		print "translation (%s) != desired output (%s)" % (translation[i], desired)
