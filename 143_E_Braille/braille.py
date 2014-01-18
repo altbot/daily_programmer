@@ -43,9 +43,9 @@ for letter in letters:
 	translation += brailleMap[letter]
 
 desiredOutput = open('output.txt').read().strip()
-
-print translation
-if translation != desiredOutput:
+if translation == desiredOutput:
+	print translation
+else:
 	print "Failure, translation does not match desired output"
 	print "translation:", translation
 	print "desired output", desiredOutput
