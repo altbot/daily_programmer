@@ -21,7 +21,7 @@ charsList = []
 for num in nums:
 	try:
 		charsList.append(numMap[num])
-	except Exception:
+	except KeyError:
 		pass # ignore 0s and 1s
 
 # Build-up regex pattern
