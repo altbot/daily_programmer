@@ -12,4 +12,4 @@ code = [int(val) for val in sys.argv[2:5]]
 # spin to second number counter-clockwise
 # spin from second to third number clockwise
 
-print numDigits * 2 + code[0] + numDigits + code[0] + numDigits - code[1] + code[2] - code[1]
+print numDigits * 4 + code[0] * 2  + code[2] - code[1] * 2
