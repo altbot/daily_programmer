@@ -1,4 +1,6 @@
 daily_programmer
 ================
+programming challenges
 
-reddit.com/r/dailyprogrammer challenges
+reddit.com/r/dailyprogrammer
+
