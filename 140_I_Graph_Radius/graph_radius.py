@@ -1,3 +1,5 @@
+# Daily programer challenge 140 - Graph Radius - Intermediate
+# http://www.reddit.com/r/dailyprogrammer/comments/1tiz4z/122313_challenge_140_intermediate_graph_radius/
 # Implementation of Dijkstra's algorithm despite uniform edge weights
 # http://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 
