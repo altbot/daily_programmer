@@ -1,0 +1,94 @@
+import re, sys
+
+d = {
+    # logic
+    #r'AND\b*\[\w+\]\b* \[\w+\]': '0x00',
+    r'MOV\s+(\[\w+\])\s+(\w+)': '0x08'
+}
+
+"""
+Group   Instruction     Byte Code   Description
+1. Logic    AND a b     2 Ops, 3 bytes:     M[a] = M[a] bit-wise and M[b]
+        0x00 [a] [b]    
+        0x01 [a] b  
+    OR a b  2 Ops, 3 bytes:     M[a] = M[a] bit-wise or M[b]
+        0x02 [a] [b]    
+        0x03 [a] b  
+    XOR a b     2 Ops, 3 bytes:     M[a] = M[a] bit-wise xor M[b]
+        0x04 [a] [b]    
+        0x05 [a] b  
+    NOT a   1 Op, 2 bytes:  M[a] = bit-wise not M[a]
+        0x06 [a]    
+2. Memory   MOV a b     2 Ops, 3 bytes:     M[a] = M[b], or the literal-set M[a] = b
+        0x07 [a] [b]    
+        0x08 [a] b  
+3. Math     RANDOM a    2 Ops, 2 bytes:     M[a] = random value (0 to 25; equal probability distribution)
+        0x09 [a]    
+    ADD a b     2 Ops, 3 bytes:     M[a] = M[a] + b; no overflow support
+        0x0a [a] [b]    
+        0x0b [a] b  
+    SUB a b     2 Ops, 3 bytes:     M[a] = M[a] - b; no underflow support
+        0x0c [a] [b]    
+        0x0d [a] b  
+4. Control  JMP x   2 Ops, 2 bytes:     Start executing instructions at index of value M[a] (So given a is zero, and M[0] is 10, we then execute instruction 10) or the literal a-value
+        0x0e [x]    
+        0x0f x  
+    JZ x a  4 Ops, 3 bytes:     Start executing instructions at index x if M[a] == 0 (This is a nice short-hand version of )
+        0x10 [x] [a]    
+        0x11 [x] a  
+        0x12 x [a]  
+        0x13 x a    
+    JEQ x a b   4 Ops, 4 bytes:     Jump to x or M[x] if M[a] is equal to M[b] or if M[a] is equal to the literal b.
+        0x14 [x] [a] [b]    
+        0x15 x [a] [b]  
+        0x16 [x] [a] b  
+        0x17 x [a] b
+    JLS x a b   4 Ops, 4 bytes:     Jump to x or M[x] if M[a] is less than M[b] or if M[a] is less than the literal b.
+        0x18 [x] [a] [b]
+        0x19 x [a] [b]
+        0x1a [x] [a] b
+        0x1b x [a] b
+    JGT x a b   4 Ops, 4 bytes:     Jump to x or M[x] if M[a] is greater than M[b] or if M[a] is greater than the literal b.
+        0x1c [x] [a] [b]    
+        0x1d x [a] [b]  
+        0x1e [x] [a] b  
+        0x1f x [a] b    
+    HALT    1 Op, 1 byte:   Halts the program / freeze flow of execution
+        0xff    
+5. Utilities    APRINT a    4 Ops, 2 byte:  Print the contents of M[a] in either ASCII (if using APRINT) or as decimal (if using DPRINT). Memory ref or literals are supported in both instructions.
+    DPRINT a    0x20 [a] (as ASCII; aprint)     
+        0x21 a (as ASCII)   
+        0x22 [a] (as Decimal; dprint)   
+        0x23 a (as Decimal)     
+"""
+
+
+
+try:
+    inFile = sys.argv[1]
+except IndexError:
+    inFile = "input.txt"
+try:
+    desiredOutput = sys.argv[2]
+except IndexError:
+    desiredOutput = "output.txt"
+
+lines = [line.strip() for line in open(inFile).readlines()]
+for line in lines:
+    print line
+    for key in d.keys():
+        m = re.match(key, line, flags=re.I)
+        if m:
+            opcode = d[key]
+            # Try and get up to two match groups - arg arg
+            for i in xrange(1, 3):
+                try:
+                    arg = (m.group(i))
+                    if arg[0] == "[" and arg[-1] == "]":
+                        #do some memory reading shiz
+                        arg = arg[1:-1]
+                    opcode += " 0x%0.2X" % int(arg)
+                except IndexError:
+                    break
+            print opcode
+            break
