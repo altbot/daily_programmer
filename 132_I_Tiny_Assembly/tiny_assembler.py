@@ -1,68 +1,71 @@
 import re, sys
 
-d = {
-    # logic
-    #r'AND\b*\[\w+\]\b* \[\w+\]': '0x00',
-    r'MOV\s+(\[\w+\])\s+(\w+)': '0x08'
+m = r"(\[\w+\])"    # memory
+l = r"\w+"          # literal
+sp = r"\s+"         # space
+
+# Build Regexes for matching args
+sm = sp + m
+sl = sp + l
+mm = sm + sm # double memory
+ml = sm + sl # memory, literal
+lm = sl + sm # literal, memory
+ll = sl + sl # literal, literal
+mmm = mm + sm
+lml = sl + sm + sl
+lmm = sl + mm
+mll = sm + ll
+mml = mm + sl
+lml = sl + sm + sl
+
+ops = {
+    # Logic ops
+    r'AND'  + mm: '0x00',
+    r'AND'  + ml: '0x01',
+    r'OR'   + mm: '0x02',
+    r'OR'   + ml: '0x03',
+    r'XOR'  + mm: '0x04',
+    r'XOR'  + ml: '0x05',
+    r'NOT'  + m:  '0x06',
+
+    # Memory ops
+    r'MOV'  + mm: '0x07',
+    r'MOV'  + ml: '0x08',
+
+    # Math ops
+    r'RANDOM' + sl: '0x09',
+    r'ADD'  + mm: '0x0a',
+    r'ADD'  + ml: '0x0b',
+    r'SUB'  + mm: '0x0c',
+    r'SUB'  + ml: '0x0d',
+
+    # Control ops
+    r'JMP'  + m: '0x0e',
+    r'JMP'  + l: '0x0f',
+    r'JZ'   + mm: '0x10',
+    r'JZ'   + ml: '0x11',
+    r'JZ'   + lm: '0x12',
+    r'JZ'   + ll: '0x13',
+    r'JEQ'  + mmm: '0x14',
+    r'JEQ'  + lmm: '0x15',
+    r'JEQ'  + mml: '0x16',
+    r'JEQ'  + lml: '0x17',
+    r'JLS'  + mmm: '0x18',
+    r'JLS'  + lmm: '0x19',
+    r'JLS'  + mml: '0x1a',
+    r'JLS'  + lml: '0x1b',
+    r'JGT'  + mmm: '0x1c',
+    r'JGT'  + lmm: '0x1d',
+    r'JGT'  + mml: '0x1e',
+    r'JGT'  + lml: '0x1f',
+    r'HALT': '0xff',
+
+    # Utilities
+    r'DPRINT' + m: '0x20',
+    r'DPRINT' + l: '0x21',
+    r'DPRINT' + m: '0x22',
+    r'DPRINT' + l: '0x23',
 }
-
-"""
-Group   Instruction     Byte Code   Description
-1. Logic    AND a b     2 Ops, 3 bytes:     M[a] = M[a] bit-wise and M[b]
-        0x00 [a] [b]    
-        0x01 [a] b  
-    OR a b  2 Ops, 3 bytes:     M[a] = M[a] bit-wise or M[b]
-        0x02 [a] [b]    
-        0x03 [a] b  
-    XOR a b     2 Ops, 3 bytes:     M[a] = M[a] bit-wise xor M[b]
-        0x04 [a] [b]    
-        0x05 [a] b  
-    NOT a   1 Op, 2 bytes:  M[a] = bit-wise not M[a]
-        0x06 [a]    
-2. Memory   MOV a b     2 Ops, 3 bytes:     M[a] = M[b], or the literal-set M[a] = b
-        0x07 [a] [b]    
-        0x08 [a] b  
-3. Math     RANDOM a    2 Ops, 2 bytes:     M[a] = random value (0 to 25; equal probability distribution)
-        0x09 [a]    
-    ADD a b     2 Ops, 3 bytes:     M[a] = M[a] + b; no overflow support
-        0x0a [a] [b]    
-        0x0b [a] b  
-    SUB a b     2 Ops, 3 bytes:     M[a] = M[a] - b; no underflow support
-        0x0c [a] [b]    
-        0x0d [a] b  
-4. Control  JMP x   2 Ops, 2 bytes:     Start executing instructions at index of value M[a] (So given a is zero, and M[0] is 10, we then execute instruction 10) or the literal a-value
-        0x0e [x]    
-        0x0f x  
-    JZ x a  4 Ops, 3 bytes:     Start executing instructions at index x if M[a] == 0 (This is a nice short-hand version of )
-        0x10 [x] [a]    
-        0x11 [x] a  
-        0x12 x [a]  
-        0x13 x a    
-    JEQ x a b   4 Ops, 4 bytes:     Jump to x or M[x] if M[a] is equal to M[b] or if M[a] is equal to the literal b.
-        0x14 [x] [a] [b]    
-        0x15 x [a] [b]  
-        0x16 [x] [a] b  
-        0x17 x [a] b
-    JLS x a b   4 Ops, 4 bytes:     Jump to x or M[x] if M[a] is less than M[b] or if M[a] is less than the literal b.
-        0x18 [x] [a] [b]
-        0x19 x [a] [b]
-        0x1a [x] [a] b
-        0x1b x [a] b
-    JGT x a b   4 Ops, 4 bytes:     Jump to x or M[x] if M[a] is greater than M[b] or if M[a] is greater than the literal b.
-        0x1c [x] [a] [b]    
-        0x1d x [a] [b]  
-        0x1e [x] [a] b  
-        0x1f x [a] b    
-    HALT    1 Op, 1 byte:   Halts the program / freeze flow of execution
-        0xff    
-5. Utilities    APRINT a    4 Ops, 2 byte:  Print the contents of M[a] in either ASCII (if using APRINT) or as decimal (if using DPRINT). Memory ref or literals are supported in both instructions.
-    DPRINT a    0x20 [a] (as ASCII; aprint)     
-        0x21 a (as ASCII)   
-        0x22 [a] (as Decimal; dprint)   
-        0x23 a (as Decimal)     
-"""
-
-
 
 try:
     inFile = sys.argv[1]
@@ -71,24 +74,30 @@ except IndexError:
 try:
     desiredOutput = sys.argv[2]
 except IndexError:
-    desiredOutput = "output.txt"
+    testFile = "output.txt"
 
-lines = [line.strip() for line in open(inFile).readlines()]
-for line in lines:
-    print line
-    for key in d.keys():
-        m = re.match(key, line, flags=re.I)
-        if m:
-            opcode = d[key]
-            # Try and get up to two match groups - arg arg
-            for i in xrange(1, 3):
+source = [line.strip() for line in open(inFile).readlines()]
+desiredOutput = [line.strip() for line in open(testFile).readlines()]
+output = []
+
+for line in source:
+    #print line
+    for mnemonic in ops.keys():
+        match = re.match(mnemonic, line, flags=re.I)
+        if match:
+            opcode = ops[mnemonic]
+            # Try and get up to three match groups - arg arg
+            for i in xrange(1, 4):
                 try:
-                    arg = (m.group(i))
+                    arg = (match.group(i))
                     if arg[0] == "[" and arg[-1] == "]":
                         #do some memory reading shiz
                         arg = arg[1:-1]
                     opcode += " 0x%0.2X" % int(arg)
                 except IndexError:
                     break
-            print opcode
+                output.append(opcode)
             break
+
+print output
+print desiredOutput
