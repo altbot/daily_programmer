@@ -5,6 +5,8 @@ l = r"\w+"          # literal
 sp = r"\s+"         # space
 
 # Build Regexes for matching args
+# When you have time, make all these vars into a nicer string
+# substitution function, they're not scalable
 sm = sp + m
 sl = sp + l
 mm = sm + sm # double memory
