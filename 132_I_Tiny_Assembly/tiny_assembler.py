@@ -1,3 +1,6 @@
+# Daily programer challenge 132 - Tiny Assembly - Intermediate
+# http://www.reddit.com/r/dailyprogrammer/comments/1kqxz9/080813_challenge_132_intermediate_tiny_assembler/
+
 import re, sys
 
 def sub(asm):
