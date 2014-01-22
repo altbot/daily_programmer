@@ -1,72 +1,59 @@
 import re, sys
 
-m = r"(\[\w+\])"    # memory
-l = r"\w+"          # literal
-sp = r"\s+"         # space
-
-# Build Regexes for matching args
-# When you have time, make all these vars into a nicer string
-# substitution function, they're not scalable
-sm = sp + m
-sl = sp + l
-mm = sm + sm # double memory
-ml = sm + sl # memory, literal
-lm = sl + sm # literal, memory
-ll = sl + sl # literal, literal
-mmm = mm + sm
-lml = sl + sm + sl
-lmm = sl + mm
-mll = sm + ll
-mml = mm + sl
-lml = sl + sm + sl
+def sub(s):
+    """ Substitute operand mnemonics for regexes """
+    s = s.replace('s', r"\s+") # whitespace
+    s = s.replace('l', r"\w+") # literal args
+    s = s.replace('m', r"(\[\w+\])") # memory args
+    return s
 
 ops = {
     # Logic ops
-    r'AND'  + mm: '0x00',
-    r'AND'  + ml: '0x01',
-    r'OR'   + mm: '0x02',
-    r'OR'   + ml: '0x03',
-    r'XOR'  + mm: '0x04',
-    r'XOR'  + ml: '0x05',
-    r'NOT'  + m:  '0x06',
+    r'AND'  + sub('smsm'): '0x00',
+    r'AND'  + sub('smsl'): '0x01',
+    r'OR'   + sub('smsm'): '0x02',
+    r'OR'   + sub('smsl'): '0x03',
+    r'XOR'  + sub('smsm'): '0x04',
+    r'XOR'  + sub('smsl'): '0x05',
+    r'NOT'  + sub('sm'):   '0x06',
 
     # Memory ops
-    r'MOV'  + mm: '0x07',
-    r'MOV'  + ml: '0x08',
+    r'MOV'  + sub('smsm'): '0x07',
+    r'MOV'  + sub('smsl'): '0x08',
 
     # Math ops
-    r'RANDOM' + sl: '0x09',
-    r'ADD'  + mm: '0x0a',
-    r'ADD'  + ml: '0x0b',
-    r'SUB'  + mm: '0x0c',
-    r'SUB'  + ml: '0x0d',
+    r'RANDOM' + sub('sl'): '0x09',
+    r'ADD'  + sub('smsm'): '0x0a',
+    r'ADD'  + sub('smsl'): '0x0b',
+    r'SUB'  + sub('smsm'): '0x0c',
+    r'SUB'  + sub('smsl'): '0x0d',
 
     # Control ops
-    r'JMP'  + m: '0x0e',
-    r'JMP'  + l: '0x0f',
-    r'JZ'   + mm: '0x10',
-    r'JZ'   + ml: '0x11',
-    r'JZ'   + lm: '0x12',
-    r'JZ'   + ll: '0x13',
-    r'JEQ'  + mmm: '0x14',
-    r'JEQ'  + lmm: '0x15',
-    r'JEQ'  + mml: '0x16',
-    r'JEQ'  + lml: '0x17',
-    r'JLS'  + mmm: '0x18',
-    r'JLS'  + lmm: '0x19',
-    r'JLS'  + mml: '0x1a',
-    r'JLS'  + lml: '0x1b',
-    r'JGT'  + mmm: '0x1c',
-    r'JGT'  + lmm: '0x1d',
-    r'JGT'  + mml: '0x1e',
-    r'JGT'  + lml: '0x1f',
+    r'JMP'  + sub('sm'): '0x0e',
+    r'JMP'  + sub('sl'): '0x0f',
+    r'JZ'   + sub('smsm'): '0x10',
+    r'JZ'   + sub('smsl'): '0x11',
+    r'JZ'   + sub('slsm'): '0x12',
+    r'JZ'   + sub('slsl'): '0x13',
+    r'JEQ'  + sub('smsmsm'): '0x14',
+    r'JEQ'  + sub('slsmsm'): '0x15',
+    r'JEQ'  + sub('smsmsl'): '0x16',
+    r'JEQ'  + sub('slsmsl'): '0x17',
+    r'JLS'  + sub('smsmsm'): '0x18',
+    r'JLS'  + sub('slsmsm'): '0x19',
+    r'JLS'  + sub('smsmsl'): '0x1a',
+    r'JLS'  + sub('slsmsl'): '0x1b',
+    r'JGT'  + sub('smsmsm'): '0x1c',
+    r'JGT'  + sub('slsmsm'): '0x1d',
+    r'JGT'  + sub('smsmsl'): '0x1e',
+    r'JGT'  + sub('slsmsl'): '0x1f',
     r'HALT': '0xff',
 
     # Utilities
-    r'DPRINT' + m: '0x20',
-    r'DPRINT' + l: '0x21',
-    r'DPRINT' + m: '0x22',
-    r'DPRINT' + l: '0x23',
+    r'DPRINT' + sub('sm'): '0x20',
+    r'DPRINT' + sub('sl'): '0x21',
+    r'DPRINT' + sub('sm'): '0x22',
+    r'DPRINT' + sub('sl'): '0x23',
 }
 
 try:
@@ -88,7 +75,7 @@ for line in source:
         match = re.match(mnemonic, line, flags=re.I)
         if match:
             opcode = ops[mnemonic]
-            # Try and get up to three match groups - arg arg
+            # Try and get up to three match groups - arg arg arg
             for i in xrange(1, 4):
                 try:
                     arg = (match.group(i))
