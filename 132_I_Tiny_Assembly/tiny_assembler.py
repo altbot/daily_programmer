@@ -1,11 +1,11 @@
 import re, sys
 
-def sub(s):
+def sub(asm):
     """ Substitute operand mnemonics for regexes """
-    s = s.replace('s', r"\s+") # whitespace
-    s = s.replace('l', r"(\w+)") # literal args
-    s = s.replace('m', r"(\[\w+\])") # memory args
-    return s
+    asm = asm.replace('s', r"\s+") # whitespace
+    asm = asm.replace('l', r"(\w+)") # literal args
+    asm = asm.replace('m', r"(\[\w+\])") # memory args
+    return asm
 
 ops = {
     # Logic ops
@@ -23,14 +23,14 @@ ops = {
 
     # Math ops
     r'RANDOM' + sub('sl'): '0x09',
-    r'ADD'  + sub('smsm'): '0x0a',
-    r'ADD'  + sub('smsl'): '0x0b',
-    r'SUB'  + sub('smsm'): '0x0c',
-    r'SUB'  + sub('smsl'): '0x0d',
+    r'ADD'  + sub('smsm'): '0x0A',
+    r'ADD'  + sub('smsl'): '0x0B',
+    r'SUB'  + sub('smsm'): '0x0C',
+    r'SUB'  + sub('smsl'): '0x0D',
 
     # Control ops
-    r'JMP'  + sub('sm'): '0x0e',
-    r'JMP'  + sub('sl'): '0x0f',
+    r'JMP'  + sub('sm'): '0x0E',
+    r'JMP'  + sub('sl'): '0x0F',
     r'JZ'   + sub('smsm'): '0x10',
     r'JZ'   + sub('smsl'): '0x11',
     r'JZ'   + sub('slsm'): '0x12',
@@ -41,13 +41,13 @@ ops = {
     r'JEQ'  + sub('slsmsl'): '0x17',
     r'JLS'  + sub('smsmsm'): '0x18',
     r'JLS'  + sub('slsmsm'): '0x19',
-    r'JLS'  + sub('smsmsl'): '0x1a',
-    r'JLS'  + sub('slsmsl'): '0x1b',
-    r'JGT'  + sub('smsmsm'): '0x1c',
-    r'JGT'  + sub('slsmsm'): '0x1d',
-    r'JGT'  + sub('smsmsl'): '0x1e',
-    r'JGT'  + sub('slsmsl'): '0x1f',
-    r'HALT': '0xff',
+    r'JLS'  + sub('smsmsl'): '0x1A',
+    r'JLS'  + sub('slsmsl'): '0x1B',
+    r'JGT'  + sub('smsmsm'): '0x1C',
+    r'JGT'  + sub('slsmsm'): '0x1D',
+    r'JGT'  + sub('smsmsl'): '0x1E',
+    r'JGT'  + sub('slsmsl'): '0x1F',
+    r'HALT': '0xFF',
 
     # Utilities
     r'DPRINT' + sub('sm'): '0x20',
@@ -60,17 +60,12 @@ try:
     inFile = sys.argv[1]
 except IndexError:
     inFile = "input.txt"
-try:
-    desiredOutput = sys.argv[2]
-except IndexError:
-    testFile = "output.txt"
 
 source = [line.strip() for line in open(inFile).readlines()]
-desiredOutput = [line.strip() for line in open(testFile).readlines()]
-output = []
 
+output = []
 for line in source:
-    #print line
+    # Iterating through dict might not be best in terms of efficiency
     for mnemonic in ops.keys():
         match = re.match(mnemonic, line, flags=re.I)
         if match:
@@ -87,6 +82,4 @@ for line in source:
                     break
             output.append(opcode)
             break
-
 print output
-print desiredOutput
