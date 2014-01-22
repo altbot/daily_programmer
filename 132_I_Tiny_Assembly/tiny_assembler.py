@@ -3,7 +3,7 @@ import re, sys
 def sub(s):
     """ Substitute operand mnemonics for regexes """
     s = s.replace('s', r"\s+") # whitespace
-    s = s.replace('l', r"\w+") # literal args
+    s = s.replace('l', r"(\w+)") # literal args
     s = s.replace('m', r"(\[\w+\])") # memory args
     return s
 
