@@ -85,7 +85,7 @@ for line in source:
                     opcode += " 0x%0.2X" % int(arg)
                 except IndexError:
                     break
-                output.append(opcode)
+            output.append(opcode)
             break
 
 print output
